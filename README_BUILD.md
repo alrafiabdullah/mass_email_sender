@@ -11,7 +11,7 @@ This document explains how to build standalone executables for macOS and Windows
 
 2. Make sure all dependencies are installed:
    ```bash
-   pip install PyQt6
+   pip install PyQt6 polars
    ```
 
 ## Building for macOS
