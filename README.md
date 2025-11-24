@@ -2,6 +2,14 @@
 
 A PyQt6 desktop application for sending personalized mass emails with CSV file support.
 
+## Screenshots
+
+### Main Window
+![Main Window](examples/main_window.png)
+
+### Settings Window
+![Settings Window](examples/settings_window.png)
+
 ## Features
 
 - 📧 **CSV Import**: Upload CSV files with recipient information
