@@ -32,7 +32,10 @@ class SettingsWidget(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.settings_file = Path("email_settings.json")
+        # Use user's home directory for settings file
+        self.settings_file = Path.home() / ".mass_email_sender" / "email_settings.json"
+        # Create directory if it doesn't exist
+        self.settings_file.parent.mkdir(parents=True, exist_ok=True)
         self.init_ui()
         self.load_settings()
 
