@@ -11,8 +11,10 @@ This document explains how to build standalone executables for macOS and Windows
 
 2. Make sure all dependencies are installed:
    ```bash
-   pip install PyQt6 polars
+   pip install PyQt6 polars boto3
    ```
+
+**Note**: `boto3` is required for AWS SES support. If you don't need SES, you can omit it.
 
 ## Building for macOS
 

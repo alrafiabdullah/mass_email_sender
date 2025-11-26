@@ -22,6 +22,8 @@ from PyQt6.QtWidgets import (
     QTabWidget,
     QTableWidget,
     QTableWidgetItem,
+    QComboBox,
+    QStackedWidget,
 )
 
 from utils import load_csv, send_emails, validate_email_settings
@@ -41,6 +43,25 @@ class SettingsWidget(QWidget):
 
     def init_ui(self):
         layout = QVBoxLayout()
+
+        # Email Provider Selection
+        provider_group = QGroupBox("Email Provider")
+        provider_layout = QHBoxLayout()
+        provider_layout.addWidget(QLabel("Provider:"))
+        self.provider_combo = QComboBox()
+        self.provider_combo.addItems(["SMTP", "AWS SES"])
+        self.provider_combo.currentIndexChanged.connect(self.toggle_provider)
+        provider_layout.addWidget(self.provider_combo)
+        provider_layout.addStretch()
+        provider_group.setLayout(provider_layout)
+        layout.addWidget(provider_group)
+
+        # Stacked widget for provider-specific settings
+        self.provider_stack = QStackedWidget()
+
+        # === SMTP Settings Page ===
+        smtp_page = QWidget()
+        smtp_page_layout = QVBoxLayout()
 
         # SMTP Settings Group
         smtp_group = QGroupBox("SMTP Server Settings")
@@ -70,11 +91,11 @@ class SettingsWidget(QWidget):
         smtp_layout.addWidget(self.tls_checkbox)
 
         smtp_group.setLayout(smtp_layout)
-        layout.addWidget(smtp_group)
+        smtp_page_layout.addWidget(smtp_group)
 
-        # Credentials Group
-        creds_group = QGroupBox("Email Credentials")
-        creds_layout = QVBoxLayout()
+        # SMTP Credentials Group
+        smtp_creds_group = QGroupBox("Email Credentials")
+        smtp_creds_layout = QVBoxLayout()
 
         # Email
         email_layout = QHBoxLayout()
@@ -82,7 +103,7 @@ class SettingsWidget(QWidget):
         self.email_input = QLineEdit()
         self.email_input.setPlaceholderText("your.email@example.com")
         email_layout.addWidget(self.email_input)
-        creds_layout.addLayout(email_layout)
+        smtp_creds_layout.addLayout(email_layout)
 
         # Password
         password_layout = QHBoxLayout()
@@ -91,10 +112,72 @@ class SettingsWidget(QWidget):
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.password_input.setPlaceholderText("App password or account password")
         password_layout.addWidget(self.password_input)
-        creds_layout.addLayout(password_layout)
+        smtp_creds_layout.addLayout(password_layout)
 
-        creds_group.setLayout(creds_layout)
-        layout.addWidget(creds_group)
+        smtp_creds_group.setLayout(smtp_creds_layout)
+        smtp_page_layout.addWidget(smtp_creds_group)
+        smtp_page_layout.addStretch()
+        smtp_page.setLayout(smtp_page_layout)
+        self.provider_stack.addWidget(smtp_page)
+
+        # === AWS SES Settings Page ===
+        ses_page = QWidget()
+        ses_page_layout = QVBoxLayout()
+
+        # AWS Credentials Group
+        aws_creds_group = QGroupBox("AWS Credentials")
+        aws_creds_layout = QVBoxLayout()
+
+        # Access Key ID
+        access_key_layout = QHBoxLayout()
+        access_key_layout.addWidget(QLabel("Access Key ID:"))
+        self.aws_access_key_input = QLineEdit()
+        self.aws_access_key_input.setPlaceholderText("AKIAIOSFODNN7EXAMPLE")
+        access_key_layout.addWidget(self.aws_access_key_input)
+        aws_creds_layout.addLayout(access_key_layout)
+
+        # Secret Access Key
+        secret_key_layout = QHBoxLayout()
+        secret_key_layout.addWidget(QLabel("Secret Access Key:"))
+        self.aws_secret_key_input = QLineEdit()
+        self.aws_secret_key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.aws_secret_key_input.setPlaceholderText(
+            "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        )
+        secret_key_layout.addWidget(self.aws_secret_key_input)
+        aws_creds_layout.addLayout(secret_key_layout)
+
+        # Region
+        region_layout = QHBoxLayout()
+        region_layout.addWidget(QLabel("AWS Region:"))
+        self.aws_region_input = QLineEdit()
+        self.aws_region_input.setPlaceholderText("us-east-1")
+        self.aws_region_input.setText("us-east-1")
+        region_layout.addWidget(self.aws_region_input)
+        aws_creds_layout.addLayout(region_layout)
+
+        aws_creds_group.setLayout(aws_creds_layout)
+        ses_page_layout.addWidget(aws_creds_group)
+
+        # SES Sender Email Group
+        ses_sender_group = QGroupBox("Sender Configuration")
+        ses_sender_layout = QVBoxLayout()
+
+        # Sender Email
+        ses_email_layout = QHBoxLayout()
+        ses_email_layout.addWidget(QLabel("Sender Email:"))
+        self.ses_sender_email_input = QLineEdit()
+        self.ses_sender_email_input.setPlaceholderText("verified-email@yourdomain.com")
+        ses_email_layout.addWidget(self.ses_sender_email_input)
+        ses_sender_layout.addLayout(ses_email_layout)
+
+        ses_sender_group.setLayout(ses_sender_layout)
+        ses_page_layout.addWidget(ses_sender_group)
+        ses_page_layout.addStretch()
+        ses_page.setLayout(ses_page_layout)
+        self.provider_stack.addWidget(ses_page)
+
+        layout.addWidget(self.provider_stack)
 
         # Save button
         button_layout = QHBoxLayout()
@@ -107,19 +190,52 @@ class SettingsWidget(QWidget):
         layout.addStretch()
         self.setLayout(layout)
 
+    def toggle_provider(self, index):
+        """Switch between SMTP and AWS SES settings"""
+        self.provider_stack.setCurrentIndex(index)
+
     def get_settings(self):
         """Return current settings as dictionary"""
-        return {
+        provider = self.provider_combo.currentText()
+
+        if provider == "AWS SES":
+            return {
+                "provider": "ses",
+                "aws_access_key": self.aws_access_key_input.text(),
+                "aws_secret_key": self.aws_secret_key_input.text(),
+                "aws_region": self.aws_region_input.text(),
+                "sender_email": self.ses_sender_email_input.text(),
+            }
+        else:
+            return {
+                "provider": "smtp",
+                "smtp_server": self.server_input.text(),
+                "smtp_port": self.port_input.value(),
+                "use_tls": self.tls_checkbox.isChecked(),
+                "sender_email": self.email_input.text(),
+                "sender_password": self.password_input.text(),
+            }
+
+    def save_settings(self):
+        """Save settings to file"""
+        # Save all settings (both SMTP and SES) for persistence
+        settings = {
+            "provider": self.provider_combo.currentText()
+            .lower()
+            .replace(" ", "")
+            .replace("aws", ""),
+            # SMTP settings
             "smtp_server": self.server_input.text(),
             "smtp_port": self.port_input.value(),
             "use_tls": self.tls_checkbox.isChecked(),
             "sender_email": self.email_input.text(),
             "sender_password": self.password_input.text(),
+            # AWS SES settings
+            "aws_access_key": self.aws_access_key_input.text(),
+            "aws_secret_key": self.aws_secret_key_input.text(),
+            "aws_region": self.aws_region_input.text(),
+            "ses_sender_email": self.ses_sender_email_input.text(),
         }
-
-    def save_settings(self):
-        """Save settings to file"""
-        settings = self.get_settings()
         try:
             with open(self.settings_file, "w") as f:
                 json.dump(settings, f, indent=2)
@@ -134,11 +250,27 @@ class SettingsWidget(QWidget):
                 with open(self.settings_file, "r") as f:
                     settings = json.load(f)
 
+                # Set provider
+                provider = settings.get("provider", "smtp")
+                if provider == "ses":
+                    self.provider_combo.setCurrentIndex(1)
+                else:
+                    self.provider_combo.setCurrentIndex(0)
+
+                # SMTP settings
                 self.server_input.setText(settings.get("smtp_server", ""))
                 self.port_input.setValue(settings.get("smtp_port", 587))
                 self.tls_checkbox.setChecked(settings.get("use_tls", True))
                 self.email_input.setText(settings.get("sender_email", ""))
                 self.password_input.setText(settings.get("sender_password", ""))
+
+                # AWS SES settings
+                self.aws_access_key_input.setText(settings.get("aws_access_key", ""))
+                self.aws_secret_key_input.setText(settings.get("aws_secret_key", ""))
+                self.aws_region_input.setText(settings.get("aws_region", "us-east-1"))
+                self.ses_sender_email_input.setText(
+                    settings.get("ses_sender_email", "")
+                )
             except Exception as e:
                 print(f"Failed to load settings: {e}")
 
