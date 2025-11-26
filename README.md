@@ -8,7 +8,8 @@ A PyQt6 desktop application for sending personalized mass emails with CSV file s
 ![Main Window](examples/main_window.png)
 
 ### Settings Window
-![Settings Window](examples/settings_window.png)
+![Settings Window](examples/settings_window_1.png)
+![Settings Window](examples/settings_window_2.png)
 
 ## Features
 
