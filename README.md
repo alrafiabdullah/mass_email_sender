@@ -14,16 +14,18 @@ A PyQt6 desktop application for sending personalized mass emails with CSV file s
 
 - 📧 **CSV Import**: Upload CSV files with recipient information
 - 📝 **Template Variables**: Personalize emails with `{first_name}`, `{last_name}`, and `{email}`
-- ⚙️ **SMTP Configuration**: Configurable email server settings (Gmail, Outlook, etc.)
+- ⚙️ **Multiple Email Providers**: Choose between SMTP or AWS SES
+- 🔧 **SMTP Configuration**: Configurable email server settings (Gmail, Outlook, etc.)
+- ☁️ **AWS SES Support**: Send emails via Amazon Simple Email Service
 - 📊 **Progress Tracking**: Real-time progress bar during email sending
 - 👀 **Preview**: See recipients before sending
-- 💾 **Settings Persistence**: Save SMTP settings for reuse
+- 💾 **Settings Persistence**: Save settings for reuse
 
 ## Installation
 
 1. Install required packages:
 ```bash
-pip install PyQt6 polars
+pip install PyQt6 polars boto3
 ```
 
 2. Run the application:
@@ -31,25 +33,46 @@ pip install PyQt6 polars
 python main.py
 ```
 
+**Note**: `boto3` is only required if you plan to use AWS SES.
+
 ## Usage
 
 ### 1. Configure Email Settings
 
-Go to the **Settings** tab and enter your SMTP credentials:
+Go to the **Settings** tab and select your email provider:
 
-- **SMTP Server**: Your email provider's SMTP server
-  - Gmail: `smtp.gmail.com`
-  - Outlook: `smtp-mail.outlook.com`
-  - Yahoo: `smtp.mail.yahoo.com`
-  
-- **Port**: Usually 587 for TLS or 465 for SSL
-- **Email**: Your email address
-- **Password**: Your email password or app-specific password
+#### Option A: SMTP (Gmail, Outlook, etc.)
+
+1. Select **SMTP** from the Provider dropdown
+2. Enter your SMTP credentials:
+   - **SMTP Server**: Your email provider's SMTP server
+     - Gmail: `smtp.gmail.com`
+     - Outlook: `smtp-mail.outlook.com`
+     - Yahoo: `smtp.mail.yahoo.com`
+   - **Port**: Usually 587 for TLS or 465 for SSL
+   - **Email**: Your email address
+   - **Password**: Your email password or app-specific password
 
 **Important for Gmail users:**
+
 - Enable 2-factor authentication
 - Create an [App Password](https://myaccount.google.com/apppasswords)
 - Use the app password instead of your regular password
+
+#### Option B: AWS SES
+
+1. Select **AWS SES** from the Provider dropdown
+2. Enter your AWS credentials:
+   - **Access Key ID**: Your AWS access key
+   - **Secret Access Key**: Your AWS secret key
+   - **AWS Region**: The SES region (e.g., `us-east-1`)
+   - **Sender Email**: A verified email address in SES
+
+**Important for AWS SES users:**
+
+- Your sender email must be verified in AWS SES
+- If in sandbox mode, recipient emails must also be verified
+- Request production access for unrestricted sending
 
 Click **Save Settings** to persist your configuration.
 
@@ -126,6 +149,40 @@ The application will automatically detect column names and validate email addres
 ### Custom SMTP
 Configure your own SMTP server with appropriate credentials.
 
+## AWS SES Configuration
+
+### Prerequisites
+
+1. An AWS account with SES enabled
+2. IAM user with SES permissions (`ses:SendEmail`, `ses:SendRawEmail`)
+3. Verified sender email address or domain
+
+### Setup Steps
+
+1. **Create IAM User**:
+   - Go to AWS IAM Console
+   - Create a new user with programmatic access
+   - Attach `AmazonSESFullAccess` policy (or custom policy with send permissions)
+   - Save the Access Key ID and Secret Access Key
+
+2. **Verify Sender Email**:
+   - Go to AWS SES Console
+   - Navigate to "Verified identities"
+   - Add and verify your sender email address
+
+3. **Check Sandbox Status**:
+   - New SES accounts are in sandbox mode
+   - In sandbox, you can only send to verified emails
+   - Request production access for unrestricted sending
+
+### SES Regions
+
+Common SES regions:
+- `us-east-1` (N. Virginia)
+- `us-west-2` (Oregon)
+- `eu-west-1` (Ireland)
+- `ap-southeast-1` (Singapore)
+
 ## Features in Detail
 
 ### Progress Tracking
@@ -150,32 +207,54 @@ Configure your own SMTP server with appropriate credentials.
 
 ## Troubleshooting
 
-### "Failed to connect to SMTP server"
+### SMTP Issues
+
+#### "Failed to connect to SMTP server"
 - Check server address and port
 - Verify internet connection
 - Ensure firewall allows SMTP traffic
 
-### "Invalid credentials"
+#### "Invalid credentials"
 - For Gmail: Use App Password, not regular password
 - Verify email and password are correct
 - Check if less secure apps need to be enabled
 
-### "No valid recipients found"
+### AWS SES Issues
+
+#### "Email address is not verified"
+- Verify your sender email in AWS SES Console
+- If in sandbox mode, verify recipient emails too
+
+#### "Access Denied" or "InvalidClientTokenId"
+- Check your Access Key ID and Secret Access Key
+- Ensure IAM user has SES permissions
+- Verify you're using the correct AWS region
+
+#### "Message rejected"
+- Check SES sending limits
+- Verify sender email is properly configured
+- Review SES bounce/complaint rates
+
+### General Issues
+
+#### "No valid recipients found"
 - Verify CSV has required columns
 - Check email format is valid
 - Ensure CSV is properly formatted
 
-### Emails not sending
-- Check daily sending limits (Gmail: 500/day)
+#### Emails not sending
+- Check daily sending limits (Gmail: 500/day, SES varies)
 - Add delays between emails (already implemented)
 - Verify recipients' email addresses
 
 ## Security Notes
 
-- Settings stored locally in `email_settings.json`
-- **Do not share** this file as it contains your password
-- Use app-specific passwords when possible
+- Settings stored locally in `~/.mass_email_sender/email_settings.json`
+- **Do not share** this file as it contains your credentials
+- Use app-specific passwords for SMTP when possible
+- For AWS SES, use IAM users with minimal required permissions
 - Add `email_settings.json` to `.gitignore`
+- Never commit AWS credentials to version control
 
 ## Building Standalone App
 
