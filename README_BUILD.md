@@ -47,6 +47,17 @@ This will create:
 2. Save it as `app.ico` in the project directory
 3. Run the build script again
 
+## Windows Build Output
+
+Below are screenshots of the compiled Windows `.exe`:
+
+### Application in `dist/` folder
+![Windows Build Screenshot](assets/windows_build/successful_compile.png)
+
+![Windows Build In dist/](assets/windows_build/created_exe.png)
+### Running the EXE
+![App Running](assets/windows_build/running_exe.png)
+
 ## Advanced: Using the Spec File
 
 For more control over the build process:
