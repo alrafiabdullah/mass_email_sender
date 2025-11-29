@@ -4,7 +4,8 @@ REM Build script for Windows
 echo Building for Windows...
 
 REM Clean previous builds
-rmdir /s /q build dist 2>nul
+if exist build rmdir /s /q build
+if exist dist rmdir /s /q dist
 
 REM Build the application
 pyinstaller --name="MassEmailSender" ^
