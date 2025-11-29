@@ -11,7 +11,7 @@ REM Build the application
 pyinstaller --name="MassEmailSender" ^
     --windowed ^
     --onefile ^
-    --icon=app.ico ^
+    --icon=assets/app.ico ^
     --add-data ".;." ^
     --noconfirm ^
     main.py

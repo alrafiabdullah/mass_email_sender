@@ -10,7 +10,7 @@ rm -r build dist
 pyinstaller --name="MassEmailSender" \
     --windowed \
     --onefile \
-    --icon=app.icns \
+    --icon=assets/app.icns \
     --add-data ".:." \
     --noconfirm \
     main.py
